@@ -1,52 +1,46 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:trying_permissions/permission_manager.dart';
+import 'package:trying_permissions/phone_list_screen.dart';
 
-void main() {
-  runApp(const MyApp());
+extension TitleGetter on PermissionStatus {
+  String get statusMessege {
+    switch (this) {
+      case PermissionStatus.granted:
+        return 'Granted';
+      case PermissionStatus.denied:
+        return 'Denied';
+      default:
+        return 'Unknown';
+    }
+  }
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+void main() {
+  runApp(const PhoneNumbersApp());
+}
+
+class PhoneNumbersApp extends StatelessWidget {
+  const PhoneNumbersApp({super.key});
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Contacts',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a blue toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'PhoneNumbersApp'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -55,71 +49,111 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  PermissionStatus? _status;
+  final PermissionManager _permissionManager = PermissionManager();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  void _checkAccess() async {
+    _status = await _permissionManager.cameraAccessStatus;
+    // if(_status != PermissionStatus.permanentlyDenied) {
+    //   _permissionManager.requestCameraPermission;
+    // } else {
+    //   showSettingDialog();
+    // }
+    if (_status == PermissionStatus.granted) {
+      final image = ImagePicker.platform.pickImage(source: ImageSource.camera);
+    }
+    if (_status == PermissionStatus.permanentlyDenied ||
+        _status == PermissionStatus.denied) {
+      showSettingDialog();
+    } else {
+      await _permissionManager.requestCameraPermission;
+    }
+    setState(() {});
+  }
+
+  void _contactsPermission() async {
+    final PermissionStatus? permissionStatus = await _getPermission();
+    if (permissionStatus == PermissionStatus.granted) {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => PhoneNumbers()));
+    } else {
+      //If permissions have been denied show standard cupertino alert dialog
+      showContactsDialog();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(
               'You have pushed the button this many times:',
             ),
             Text(
-              '$_counter',
+              ' ',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
+        onPressed: _contactsPermission,
+        tooltip: 'Contacts',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+
+  Future<PermissionStatus?> _getPermission() async {
+    final PermissionStatus permission = await Permission.contacts.status;
+    if (permission != PermissionStatus.granted &&
+        permission != PermissionStatus.denied) {
+      final Map<Permission, PermissionStatus> permissionStatus =
+          await [Permission.contacts].request();
+      return permissionStatus[Permission.contacts];
+    } else {
+      return permission;
+    }
+  }
+
+  void showSettingDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Vou need permissions to camera access'),
+        content: const Text('Do you want open settings now?'),
+        actions: [
+          const CupertinoActionSheetAction(
+              onPressed: openAppSettings, child: Text('Yes')),
+          CupertinoActionSheetAction(
+              onPressed: Navigator.of(context).maybePop,
+              child: const Text('No'))
+        ],
+      ),
+    );
+  }
+
+  void showContactsDialog() {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) => CupertinoAlertDialog(
+              title: const Text('Permissions error'),
+              content: const Text('Please enable contacts access '
+                  'permission in system settings'),
+              actions: <Widget>[
+                const CupertinoActionSheetAction(
+                    onPressed: openAppSettings, child: Text('Yes')),
+                CupertinoActionSheetAction(
+                    onPressed: Navigator.of(context).maybePop,
+                    child: const Text('No'))
+              ],
+            ));
   }
 }
