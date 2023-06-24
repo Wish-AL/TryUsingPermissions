@@ -1,6 +1,8 @@
 import 'package:contacts_service/contacts_service.dart';
 import 'package:flutter/material.dart';
 
+import 'contact_data_screen.dart';
+
 class PhoneNumbers extends StatefulWidget {
   const PhoneNumbers({super.key});
 
@@ -37,11 +39,20 @@ class _PhoneNumbersState extends State<PhoneNumbers> {
               itemCount: _contacts?.length,
               itemBuilder: (BuildContext context, int index) {
                 Contact? contact = _contacts?.elementAt(index);
-                return Row(
-                  children: [
-                    Text(contact?.phones?[0].value ?? ''),
-                    Text(contact?.displayName ?? ''),
-                  ],
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                ContactData(contactInfo: contact)));
+                  },
+                  child: Row(
+                    children: [
+                      Text(contact?.phones?[0].value ?? ''),
+                      Text(contact?.displayName ?? ''),
+                    ],
+                  ),
                 );
                 //This can be further expanded to showing contacts detail
                 // onPressed().

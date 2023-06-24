@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+//import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:trying_permissions/permission_manager.dart';
 import 'package:trying_permissions/phone_list_screen.dart';
@@ -25,7 +25,6 @@ void main() {
 class PhoneNumbersApp extends StatelessWidget {
   const PhoneNumbersApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -52,24 +51,24 @@ class _MyHomePageState extends State<MyHomePage> {
   PermissionStatus? _status;
   final PermissionManager _permissionManager = PermissionManager();
 
-  void _checkAccess() async {
-    _status = await _permissionManager.cameraAccessStatus;
-    // if(_status != PermissionStatus.permanentlyDenied) {
-    //   _permissionManager.requestCameraPermission;
-    // } else {
-    //   showSettingDialog();
-    // }
-    if (_status == PermissionStatus.granted) {
-      final image = ImagePicker.platform.pickImage(source: ImageSource.camera);
-    }
-    if (_status == PermissionStatus.permanentlyDenied ||
-        _status == PermissionStatus.denied) {
-      showSettingDialog();
-    } else {
-      await _permissionManager.requestCameraPermission;
-    }
-    setState(() {});
-  }
+  // void _checkAccess() async {
+  //   _status = await _permissionManager.cameraAccessStatus;
+  //   // if(_status != PermissionStatus.permanentlyDenied) {
+  //   //   _permissionManager.requestCameraPermission;
+  //   // } else {
+  //   //   showSettingDialog();
+  //   // }
+  //   if (_status == PermissionStatus.granted) {
+  //     final image = ImagePicker.platform.pickImage(source: ImageSource.camera);
+  //   }
+  //   if (_status == PermissionStatus.permanentlyDenied ||
+  //       _status == PermissionStatus.denied) {
+  //     showSettingDialog();
+  //   } else {
+  //     await _permissionManager.requestCameraPermission;
+  //   }
+  //   setState(() {});
+  // }
 
   void _contactsPermission() async {
     final PermissionStatus? permissionStatus = await _getPermission();
