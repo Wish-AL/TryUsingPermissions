@@ -1,22 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-//import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:trying_permissions/permission_manager.dart';
-import 'package:trying_permissions/phone_list_screen.dart';
-
-extension TitleGetter on PermissionStatus {
-  String get statusMessege {
-    switch (this) {
-      case PermissionStatus.granted:
-        return 'Granted';
-      case PermissionStatus.denied:
-        return 'Denied';
-      default:
-        return 'Unknown';
-    }
-  }
-}
+import 'package:trying_permissions/phone_list_widget.dart';
 
 void main() {
   runApp(const PhoneNumbersApp());
@@ -50,40 +36,38 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   PermissionStatus? _status;
   final PermissionManager _permissionManager = PermissionManager();
-
-  // void _checkAccess() async {
-  //   _status = await _permissionManager.cameraAccessStatus;
-  //   // if(_status != PermissionStatus.permanentlyDenied) {
-  //   //   _permissionManager.requestCameraPermission;
-  //   // } else {
-  //   //   showSettingDialog();
-  //   // }
-  //   if (_status == PermissionStatus.granted) {
-  //     final image = ImagePicker.platform.pickImage(source: ImageSource.camera);
-  //   }
-  //   if (_status == PermissionStatus.permanentlyDenied ||
-  //       _status == PermissionStatus.denied) {
-  //     showSettingDialog();
-  //   } else {
-  //     await _permissionManager.requestCameraPermission;
-  //   }
-  //   setState(() {});
-  // }
+  bool isDenied = false;
 
   void _contactsPermission() async {
-    final PermissionStatus? permissionStatus = await _getPermission();
+    _status = await _permissionManager.contactsAccessStatus;
 
-    if (permissionStatus == PermissionStatus.granted) {
-      Navigator.push(
-          context, MaterialPageRoute(builder: (context) => PhoneNumbers()));
+    if (_status == PermissionStatus.granted) {
+      isDenied = true;
+      // Navigator.push(
+      //     context, MaterialPageRoute(builder: (context) => PhoneNumbers()));
+    } else {
+      _permissionManager.requestContactsPermission;
+      return;
     }
-    if (permissionStatus == PermissionStatus.permanentlyDenied) {
-      showContactsDialog();
-    }
-    else {
-      //If permissions have been denied show standard cupertino alert dialog
+    setState(() {});
+  }
 
+  Future<void> buttonTapToSettingsDialog() async {
+    _status = await _permissionManager.contactsAccessStatus;
+    if (_status == PermissionStatus.permanentlyDenied ||
+        _status == PermissionStatus.denied) {
+      showSettingDialog();
     }
+    if (_status == PermissionStatus.granted) {
+      isDenied = true;
+      setState(() {});
+    }
+  }
+
+  @override
+  void initState() {
+    _contactsPermission();
+    super.initState();
   }
 
   @override
@@ -93,40 +77,28 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+      body: isDenied
+          ? const PhoneNumbers()
+          : const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    'You have pushed the button to get contacts:',
+                  ),
+                ],
+              ),
             ),
-            Text(
-              ' ',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _contactsPermission,
-        tooltip: 'Contacts',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      floatingActionButton: !isDenied
+      ? FloatingActionButton.extended(
+        onPressed: buttonTapToSettingsDialog,
+        label: const Text('Contacts'),
+        icon: const Icon(Icons.person),
+      )
+      : const SizedBox(),
     );
   }
 
-  Future<PermissionStatus?> _getPermission() async {
-    final PermissionStatus permission = await Permission.contacts.status;
-    if (permission != PermissionStatus.granted && permission != PermissionStatus.permanentlyDenied)  {
-      final Map<Permission, PermissionStatus> permissionStatus =
-          await [Permission.contacts].request();
-      return permissionStatus[Permission.contacts];
-    } else {
-      return permission;
-    }
-  }
-//&&
-//         permission != PermissionStatus.denied)
   void showSettingDialog() {
     showDialog(
       context: context,
@@ -142,22 +114,5 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
     );
-  }
-
-  void showContactsDialog() {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) => CupertinoAlertDialog(
-              title: const Text('Permissions error'),
-              content: const Text('Please enable contacts access '
-                  'permission in system settings'),
-              actions: <Widget>[
-                const CupertinoActionSheetAction(
-                    onPressed: openAppSettings, child: Text('Yes')),
-                CupertinoActionSheetAction(
-                    onPressed: Navigator.of(context).maybePop,
-                    child: const Text('No'))
-              ],
-            ));
   }
 }

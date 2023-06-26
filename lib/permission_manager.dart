@@ -1,10 +1,10 @@
 import 'package:permission_handler/permission_handler.dart';
 
 class PermissionManager {
-  Future<PermissionStatus> get cameraAccessStatus {
-    return Permission.camera.status;
+  Future<PermissionStatus> get contactsAccessStatus {
+    return Permission.contacts.status;
   }
-  Future<void> get requestCameraPermission async {
-    await [Permission.camera].request();
+  Future<void> get requestContactsPermission async {
+    await [Permission.contacts].request();
   }
 }

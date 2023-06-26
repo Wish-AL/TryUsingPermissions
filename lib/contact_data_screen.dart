@@ -19,21 +19,17 @@ class _ContactDataState extends State<ContactData> {
     avatarImage = widget.contactInfo!.avatar!;
     super.initState();
   }
-  // void changeAvatar() {
-  //   avatarImage = MemoryImage(widget.contactInfo!.avatar!);
-  // }
+
   void avatarFromGallery() async {
     final PermissionStatus? permissionStatus = await _getPhotosPermission();
     if (permissionStatus == PermissionStatus.granted) {
       final ImagePicker imagePicker = ImagePicker();
       XFile? image = await imagePicker.pickImage(source: ImageSource.gallery);
       avatarImage = await image?.readAsBytes();
+      setState(() {});
 
-      setState(() {
-
-      });
-    } else {
-      //If permissions have been denied show standard cupertino alert dialog
+    }
+    if (permissionStatus == PermissionStatus.permanentlyDenied){
       showSettingDialog();
     }
   }
@@ -41,7 +37,7 @@ class _ContactDataState extends State<ContactData> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: (const Text('Contacts')),
+        title: (const Text('Contact data')),
       ),
       body: Column(
         children: [
@@ -52,18 +48,34 @@ class _ContactDataState extends State<ContactData> {
                 onTap: avatarFromGallery,
                 child: (widget.contactInfo?.avatar != null)
                 ? CircleAvatar(
+                  radius: 50,
                     backgroundImage:MemoryImage(avatarImage),
                     )
-                : CircleAvatar(
-
-                    child: Text('data')),
+                : const CircleAvatar(
+                  radius: 50,
+                    child: Text('no avatar')),
               ),
             ),
           ),
-          Row(children: [
-            Text(widget.contactInfo?.displayName ?? ''),
-            Text(widget.contactInfo?.phones?[0].value ?? ''),
-          ],),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(children: [
+              const Text('First Name:'),
+              const SizedBox(width: 20,),
+              Text(widget.contactInfo?.displayName ?? ''),
+
+            ],),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                const Text('phone number:'),
+                const SizedBox(width: 20,),
+                Text(widget.contactInfo?.phones?[0].value ?? ''),
+              ],
+            ),
+          )
         ],
       ),
     );
@@ -87,7 +99,7 @@ class _ContactDataState extends State<ContactData> {
   Future<PermissionStatus?> _getPhotosPermission() async {
     final PermissionStatus permission = await Permission.photos.status;
     if (permission != PermissionStatus.granted &&
-        permission != PermissionStatus.denied) {
+        permission != PermissionStatus.permanentlyDenied) {
       final Map<Permission, PermissionStatus> permissionStatus =
       await [Permission.photos].request();
       return permissionStatus[Permission.photos];
