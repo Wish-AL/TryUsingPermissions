@@ -72,12 +72,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _contactsPermission() async {
     final PermissionStatus? permissionStatus = await _getPermission();
+
     if (permissionStatus == PermissionStatus.granted) {
       Navigator.push(
           context, MaterialPageRoute(builder: (context) => PhoneNumbers()));
-    } else {
-      //If permissions have been denied show standard cupertino alert dialog
+    }
+    if (permissionStatus == PermissionStatus.permanentlyDenied) {
       showContactsDialog();
+    }
+    else {
+      //If permissions have been denied show standard cupertino alert dialog
+
     }
   }
 
@@ -112,8 +117,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<PermissionStatus?> _getPermission() async {
     final PermissionStatus permission = await Permission.contacts.status;
-    if (permission != PermissionStatus.granted &&
-        permission != PermissionStatus.denied) {
+    if (permission != PermissionStatus.granted && permission != PermissionStatus.permanentlyDenied)  {
       final Map<Permission, PermissionStatus> permissionStatus =
           await [Permission.contacts].request();
       return permissionStatus[Permission.contacts];
@@ -121,7 +125,8 @@ class _MyHomePageState extends State<MyHomePage> {
       return permission;
     }
   }
-
+//&&
+//         permission != PermissionStatus.denied)
   void showSettingDialog() {
     showDialog(
       context: context,

@@ -13,13 +13,25 @@ class ContactData extends StatefulWidget {
 }
 
 class _ContactDataState extends State<ContactData> {
-  void changeAvatar() {
-
+  var avatarImage;
+  @override
+  void initState() {
+    avatarImage = widget.contactInfo!.avatar!;
+    super.initState();
   }
-  void _contactsPermission() async {
+  // void changeAvatar() {
+  //   avatarImage = MemoryImage(widget.contactInfo!.avatar!);
+  // }
+  void avatarFromGallery() async {
     final PermissionStatus? permissionStatus = await _getPhotosPermission();
     if (permissionStatus == PermissionStatus.granted) {
-      //final image = ImagePicker.platform.pickImage(source: ImageSource.);
+      final ImagePicker imagePicker = ImagePicker();
+      XFile? image = await imagePicker.pickImage(source: ImageSource.gallery);
+      avatarImage = await image?.readAsBytes();
+
+      setState(() {
+
+      });
     } else {
       //If permissions have been denied show standard cupertino alert dialog
       showSettingDialog();
@@ -33,14 +45,20 @@ class _ContactDataState extends State<ContactData> {
       ),
       body: Column(
         children: [
-          GestureDetector(
-            onTap: changeAvatar,
-            child: (widget.contactInfo?.avatar != null)
-            ? CircleAvatar(
-                backgroundImage:MemoryImage(widget.contactInfo!.avatar!),
-                child: Text('data'))
-            : CircleAvatar(
-                child: Text('data')),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Center(
+              child: GestureDetector(
+                onTap: avatarFromGallery,
+                child: (widget.contactInfo?.avatar != null)
+                ? CircleAvatar(
+                    backgroundImage:MemoryImage(avatarImage),
+                    )
+                : CircleAvatar(
+
+                    child: Text('data')),
+              ),
+            ),
           ),
           Row(children: [
             Text(widget.contactInfo?.displayName ?? ''),
@@ -71,8 +89,8 @@ class _ContactDataState extends State<ContactData> {
     if (permission != PermissionStatus.granted &&
         permission != PermissionStatus.denied) {
       final Map<Permission, PermissionStatus> permissionStatus =
-      await [Permission.contacts].request();
-      return permissionStatus[Permission.contacts];
+      await [Permission.photos].request();
+      return permissionStatus[Permission.photos];
     } else {
       return permission;
     }
