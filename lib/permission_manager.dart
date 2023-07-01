@@ -7,4 +7,10 @@ class PermissionManager {
   Future<void> get requestContactsPermission async {
     await [Permission.contacts].request();
   }
+  Future<PermissionStatus> get photosAccessStatus {
+    return Permission.photos.status;
+  }
+  Future<void> get requestPhotosPermission {
+    return [Permission.photos].request();
+  }
 }
