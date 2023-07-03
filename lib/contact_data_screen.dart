@@ -1,43 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:contacts_service/contacts_service.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:trying_permissions/permission_manager.dart';
+import 'my_inherit.dart';
 
-class ContactData extends StatefulWidget {
-  final Contact? contactInfo;
-  const ContactData({super.key, required this.contactInfo});
 
-  @override
-  State<ContactData> createState() => _ContactDataState();
-}
+class ContactData extends StatelessWidget {
+  const ContactData({super.key});
 
-class _ContactDataState extends State<ContactData> {
-  var avatarImage;
-  PermissionStatus? _status;
-  final PermissionManager _permissionManager = PermissionManager();
-  @override
-  void initState() {
-    avatarImage = widget.contactInfo!.avatar!;
-    super.initState();
-  }
-
-  void avatarFromGallery() async {
-    _status = await _permissionManager.photosAccessStatus;
-    if (_status == PermissionStatus.granted) {
-      final ImagePicker imagePicker = ImagePicker();
-      XFile? image = await imagePicker.pickImage(source: ImageSource.gallery);
-      avatarImage = await image?.readAsBytes();
-      setState(() {});
-
-    }
-    if (_status == PermissionStatus.permanentlyDenied){
-      showSettingDialog();
-    }
-  }
   @override
   Widget build(BuildContext context) {
+    final contactInfo = MyAppInherit.read<MyContactsModel>(context)?.contactInfo;
+    final photo = MyAppInherit.watch<PhotoModel>(context);
+    final avatarImage = MyAppInherit.watch<MyContactsModel>(context)?.contactInfo?.avatar;
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
@@ -49,11 +22,11 @@ class _ContactDataState extends State<ContactData> {
               padding: const EdgeInsets.all(8.0),
               child: Center(
                 child: GestureDetector(
-                  onTap: avatarFromGallery,
-                  child: (widget.contactInfo?.avatar != null)
+                  onTap: () {photo?.avatarFromGallery;},
+                  child: (contactInfo?.avatar != null)
                   ? CircleAvatar(
                     radius: 50,
-                      backgroundImage:MemoryImage(avatarImage),
+                      backgroundImage:MemoryImage(avatarImage!),
                       )
                   : const CircleAvatar(
                     radius: 50,
@@ -66,7 +39,7 @@ class _ContactDataState extends State<ContactData> {
               child: Row(children: [
                 const Text('First Name:'),
                 const SizedBox(width: 20,),
-                Text(widget.contactInfo?.displayName ?? ''),
+                Text(contactInfo?.displayName ?? ''),
 
               ],),
             ),
@@ -76,7 +49,7 @@ class _ContactDataState extends State<ContactData> {
                 children: [
                   const Text('phone number:'),
                   const SizedBox(width: 20,),
-                  Text(widget.contactInfo?.phones?[0].value ?? ''),
+                  Text(contactInfo?.phones?[0].value ?? ''),
                 ],
               ),
             )
@@ -85,31 +58,4 @@ class _ContactDataState extends State<ContactData> {
       ),
     );
   }
-  void showSettingDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('Vou need permissions to image access'),
-        content: const Text('Do you want open settings now?'),
-        actions: [
-          const CupertinoActionSheetAction(
-              onPressed: openAppSettings, child: Text('Yes')),
-          CupertinoActionSheetAction(
-              onPressed: Navigator.of(context).maybePop,
-              child: const Text('No'))
-        ],
-      ),
-    );
-  }
-  // Future<PermissionStatus?> _getPhotosPermission() async {
-  //   final PermissionStatus permission = await Permission.photos.status;
-  //   if (permission != PermissionStatus.granted &&
-  //       permission != PermissionStatus.permanentlyDenied) {
-  //     final Map<Permission, PermissionStatus> permissionStatus =
-  //     await [Permission.photos].request();
-  //     return permissionStatus[Permission.photos];
-  //   } else {
-  //     return permission;
-  //   }
-  // }
 }
