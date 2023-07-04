@@ -1,25 +1,34 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:trying_permissions/permission_manager.dart';
 import 'package:trying_permissions/phone_list_widget.dart';
+import 'my_inherit.dart';
 
 void main() {
-  runApp(const PhoneNumbersApp());
+  runApp(PhoneNumbersApp());
 }
 
 class PhoneNumbersApp extends StatelessWidget {
-  const PhoneNumbersApp({super.key});
+  PhoneNumbersApp({super.key});
+
+  final contactModel = ContactModel();
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Contacts',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return MyAppInherit<ContactModel>(
+      model: contactModel,
+      child: MyAppInherit<MyContactsModel>(
+        model: MyContactsModel(),
+        child: MaterialApp(
+          title: 'Contacts',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+            useMaterial3: true,
+          ),
+          home:
+            const MyHomePage(title: 'PhoneNumbersApp'),
+
+        ),
       ),
-      home: const MyHomePage(title: 'PhoneNumbersApp'),
     );
   }
 }
@@ -34,84 +43,56 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  PermissionStatus? _status;
-  final PermissionManager _permissionManager = PermissionManager();
-  bool isDenied = false;
-
-  void _contactsPermission() async {
-    _status = await _permissionManager.contactsAccessStatus;
-
-    if (_status == PermissionStatus.granted) {
-      isDenied = true;
-      // Navigator.push(
-      //     context, MaterialPageRoute(builder: (context) => PhoneNumbers()));
-    } else {
-      _permissionManager.requestContactsPermission;
-      return;
-    }
-    setState(() {});
-  }
-
-  Future<void> buttonTapToSettingsDialog() async {
-    _status = await _permissionManager.contactsAccessStatus;
-    if (_status == PermissionStatus.permanentlyDenied ||
-        _status == PermissionStatus.denied) {
-      showSettingDialog();
-    }
-    if (_status == PermissionStatus.granted) {
-      isDenied = true;
-      setState(() {});
-    }
-  }
+  late bool isGranted = false;
 
   @override
   void initState() {
-    _contactsPermission();
     super.initState();
+    setState(() {
+      MyAppInherit.read<ContactModel>(context)?.contactsPermission();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    MyAppInherit.read<ContactModel>(context)?.addListener(() {
+      isGranted = MyAppInherit.read<ContactModel>(context)!.isGranted;
+      if (isGranted) {
+        setState(() {});
+      }
+    });
+    super.didChangeDependencies();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: isDenied
-          ? const PhoneNumbers()
-          : const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Text(
-                    'You have pushed the button to get contacts:',
-                  ),
-                ],
+    final contactsPermission = MyAppInherit.watch<ContactModel>(context);
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          title: Text(widget.title),
+        ),
+        body: contactsPermission!.isGranted
+            ? const PhoneNumbers()
+            : const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      'You have pushed the button to get contacts:',
+                    ),
+                  ],
+                ),
               ),
-            ),
-      floatingActionButton: !isDenied
-      ? FloatingActionButton.extended(
-        onPressed: buttonTapToSettingsDialog,
-        label: const Text('Contacts'),
-        icon: const Icon(Icons.person),
-      )
-      : const SizedBox(),
-    );
-  }
-
-  void showSettingDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('Vou need permissions to camera access'),
-        content: const Text('Do you want open settings now?'),
-        actions: [
-          const CupertinoActionSheetAction(
-              onPressed: openAppSettings, child: Text('Yes')),
-          CupertinoActionSheetAction(
-              onPressed: Navigator.of(context).maybePop,
-              child: const Text('No'))
-        ],
+        floatingActionButton: !contactsPermission.isGranted
+            ? FloatingActionButton.extended(
+                onPressed: () =>
+                    contactsPermission.buttonTapToSettingsDialog(context),
+                label: const Text('Contacts'),
+                icon: const Icon(Icons.person),
+              )
+            : const SizedBox(),
       ),
     );
   }
